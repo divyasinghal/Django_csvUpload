@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script><!--  -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <title>Store Data</title>
+    <style>
+      table {
+  border-collapse: collapse;
+  width: 100%;
+  align-items: center;
+        border: 1px solid #ddd;
+        font-size: 18px;
+}
+
+th, td {
+  text-align: left;
+  padding-left: 30px;
+  padding-right: 30px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+} 
+
+.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+tr {
+  border-bottom: 1px solid #ddd
+}
+    </style>
+  
+    {% load static %}
+  </head>
+  <body>
+    <button style="align-items: center" onClick="reload()" title="home">
+      <i class="fa fa-home"></i>
+    </button>
+    {% if message %}    
+      <p> {{ message }}</p>      
+    {% else %}    
+    <form action="" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label for="file1"> Upload a file (Only accepts CSV files)</label>
+      <input type="file" id="file1" name="file" multiple accept="csv"> </>
+      <button type="submit" title="upload"><i class="fa fa-upload"></i></button>
+    </form>
+    
+    <div style="overflow-x: auto;">
+    <table
+      id="table"
+      class="center"
+    >
+      <thead>
+        <tr class="header">
+          {% for header in headers %}
+          <th>
+            {{ header }}
+            <input type="text" id="{{ header }}" placeholder="filter.." />
+          </th>          
+          {% endfor %}
+          {% if headers %}
+          <th>
+            <button onClick="filterValue()" title="filter">
+              <i class="fa fa-filter"></i>
+            </button>
+          </th>
+          {% endif %}
+          
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in data %}
+        <tr>
+          <td>
+            {{d.storeId}}
+          </td>
+          <td            
+            contenteditable="true"
+            id="sku-{{d.id}}"
+            data-old_value="{{d.sku}}"
+            onClick="highlightEdit(this);"
+          >
+            {{d.sku}}
+          </td>
+          <td           
+            contenteditable="true"
+            id="pnm-{{d.id}}"
+            data-old_value="{{d.productName}}"
+            onClick="highlightEdit(this);"
+          >
+            {{d.productName}}
+          </td>
+          <td            
+            contenteditable="true"
+            id="price-{{d.id}}"
+            data-old_value="{{d.price}}"
+            onClick="highlightEdit(this);"
+          >
+            {{d.price}}
+          </td>
+          <td            
+            contenteditable="true"
+            id="date-{{d.id}}"
+            data-old_value="{{d.date}}"
+            onClick="highlightEdit(this);"
+          >
+            {{d.date}}
+          </td>
+          <td>
+            <centre>
+              <button onClick="saveEditedValue('{{d.id}}')" title="save">
+                <i class="fa fa-save"></i>
+              </button>
+            </centre>
+          </td>
+
+          <th></th>
+        </tr>
+        {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+   
+  </body>
+ <script>
+  const filterValue = () => {
+  storeIdSearc = document.getElementById("StoreId").value;
+  skuSearch = document.getElementById("SKU").value;
+  productNameSearch = document.getElementById("Product Name").value;
+  priceSearch = document.getElementById("Price").value;
+  dateSearch = document.getElementById("Date").value;
+  $.ajax({
+    type: "GET",
+    url: "/filterData/1",
+    data: {
+      storeIdSearc: storeIdSearc,
+      skuSearch: skuSearch,
+      productNameSearch: productNameSearch,
+      priceSearch: priceSearch,
+      dateSearch: dateSearch,
+    },
+    success: function (data) {
+      window.location.replace(
+        "http://" + window.location.host + "/filterData/0"
+      );
+    },
+  });
+};
+
+function highlightEdit(elem) {
+  $(elem).css("background", "#e3e3e3");
+}
+
+function saveEditedValue(id) {
+  editedsku = document.getElementById("sku-" + id);
+  editedpNm = document.getElementById("pnm-" + id);
+  editedprice = document.getElementById("price-" + id);
+  editeddate = document.getElementById("date-" + id);
+
+  if (
+    editedsku.getAttribute("data-old_value") === editedsku.innerHTML &&
+    editedpNm.getAttribute("data-old_value") === editedpNm.innerHTML &&
+    editedprice.getAttribute("data-old_value") === editedprice.innerHTML &&
+    editeddate.getAttribute("data-old_value") === editeddate.innerHTML
+  )
+    return false;
+
+  $.ajax({
+    url: "/saveStoreData/" + id,
+    type: "get",
+    dataType: "json",
+    data: {
+      sku: editedsku.innerHTML,
+      productName: editedpNm.innerHTML,
+      price: editedprice.innerHTML,
+      date: editeddate.innerHTML,
+    },
+    success: function (res) {
+      if (res) {
+        editedsku.style.background = "#FDFDFD";
+        editedpNm.style.background = "#FDFDFD";
+        editedprice.style.background = "#FDFDFD";
+        editeddate.style.background = "#FDFDFD";
+      }
+    },
+    error: function () {
+      console.log("errr");
+      alert("An error occurred");
+    },
+  });
+}
+
+function reload(e) {
+  window.location.replace("http://" + window.location.host + "/");
+}
+
+ </script>
+</html>
